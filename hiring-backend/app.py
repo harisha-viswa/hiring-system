@@ -5,8 +5,6 @@ from flask_jwt_extended import create_access_token, jwt_required, JWTManager
 import pymysql
 import os
 import random
-
-
 #library are updated
 
 app = Flask(__name__)
