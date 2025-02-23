@@ -1,0 +1,109 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+const RecruiterPage = () => {
+    const navigate = useNavigate();
+    const [showForm, setShowForm] = useState(false);
+    const [jobList, setJobList] = useState([]);
+    const [formData, setFormData] = useState({
+        job_role: '',
+        experience: '',
+        salary: '',
+        location: '',
+        job_description: null
+    });
+
+    // Fetch jobs from backend
+    useEffect(() => {
+        axios.get("http://127.0.0.1:5000/get-jobs")
+            .then(response => setJobList(response.data))
+            .catch(error => console.error("Error fetching jobs:", error));
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_type');
+        navigate('/');
+    };
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.size > 20 * 1024 * 1024) {  // 20MB limit
+            alert("File size must be less than 20MB.");
+            return;
+        }
+        setFormData({ ...formData, job_description: file });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const formDataToSend = new FormData();
+        formDataToSend.append("job_role", formData.job_role);
+        formDataToSend.append("experience", formData.experience);
+        formDataToSend.append("salary", formData.salary);
+        formDataToSend.append("location", formData.location);
+        formDataToSend.append("job_description", formData.job_description);
+
+        try {
+            await axios.post("http://127.0.0.1:5000/create-job", formDataToSend, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            alert("Job Created Successfully!");
+
+            // Refresh job list
+            const response = await axios.get("http://127.0.0.1:5000/get-jobs");
+            setJobList(response.data);
+
+            setShowForm(false);
+            setFormData({ job_role: '', experience: '', salary: '', location: '', job_description: null });
+        } catch (error) {
+            alert("Error creating job: " + (error.response?.data?.error || error.message));
+        }
+    };
+
+    return (
+        <div className="dashboard">
+            <h2>Recruiter Dashboard</h2>
+            <p>Welcome, Recruiter! You can post job listings here.</p>
+            <button onClick={() => setShowForm(true)}>Create New Job</button>
+            <button onClick={handleLogout}>Logout</button>
+
+            {showForm && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h3>Create Job</h3>
+                        <form onSubmit={handleSubmit}>
+                            <input type="text" name="job_role" placeholder="Job Role" onChange={handleChange} required />
+                            <input type="number" name="experience" placeholder="Years of Experience" onChange={handleChange} required />
+                            <input type="number" name="salary" placeholder="Salary" onChange={handleChange} required />
+                            <input type="text" name="location" placeholder="Location" onChange={handleChange} required />
+                            <input type="file" accept="application/pdf" onChange={handleFileChange} required />
+                            <button type="submit">Submit</button>
+                        </form>
+                        <button onClick={() => setShowForm(false)}>Close</button>
+                    </div>
+                </div>
+            )}
+
+            <h3>Job Listings</h3>
+            <ul>
+                {jobList.map((job) => (
+                    <li key={job.job_id}>
+                        <strong>{job.job_role}</strong> | {job.location} | {job.salary} | {job.experience} years experience
+                        <br />
+                        <a href={`http://127.0.0.1:5000/job-description/${job.job_id}`} target="_blank" rel="noopener noreferrer">View Job Description</a>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
+export default RecruiterPage;
+
