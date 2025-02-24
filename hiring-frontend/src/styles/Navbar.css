@@ -1,0 +1,17 @@
+/* Navbar Styling */
+.navbar {
+    background-color: #00796B; /* Teal color */
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    font-size: 20px;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.navbar-title {
+    display: block;
+}

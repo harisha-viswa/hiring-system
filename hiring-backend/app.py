@@ -5,8 +5,10 @@ from flask_jwt_extended import create_access_token, jwt_required, JWTManager
 import pymysql
 import os
 import random
-#library are updated
 
+#import secrets
+#library are updated
+#strong_secret_key = secrets.token_hex(32) 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
@@ -98,6 +100,9 @@ def login():
         return jsonify({"error": str(e)}), 500
     finally:
         conn.close()
+        
+# def pdf_info_extraction(file_path):
+    
 
 @app.route('/create-job', methods=['POST'])
 def create_job():
@@ -111,6 +116,8 @@ def create_job():
     if job_desc and job_desc.filename.endswith('.pdf'):
         file_path = os.path.join(UPLOAD_FOLDER, f"{job_id}.pdf")
         job_desc.save(file_path)
+        
+    # extract_info=pdf_info_extraction(file_path)
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -141,6 +148,33 @@ def get_job_description(job_id):
     if job and os.path.exists(job['job_description']):
         return send_file(job['job_description'], as_attachment=True)
     return jsonify({"error": "File not found"}), 404
+
+
+@app.route('/apply-job', methods=['POST'])
+def apply_job():
+    job_id = request.form['job_id']
+    name = request.form['name']
+    email = request.form['email']
+    phone = request.form['phone']
+    resume = request.files['resume']
+
+    if resume and resume.filename.endswith('.pdf'):
+        resume_path = os.path.join(UPLOAD_FOLDER, f"{email}_resume.pdf")
+        resume.save(resume_path)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO applications (job_id, name, email, phone, resume_path) 
+        VALUES (%s, %s, %s, %s, %s)""",
+        (job_id, name, email, phone, resume_path)
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Application submitted successfully"}), 201
+
+
 
 
 if __name__ == '__main__':
