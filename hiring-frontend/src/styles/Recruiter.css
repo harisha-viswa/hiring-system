@@ -1,16 +1,47 @@
 .dashboard {
-    background-color: teal;
     color: white;
     padding: 20px;
     text-align: center;
+    background-color: #e0f2f1;
+    flex: 1;  /* Make sure content takes up available space */
+    display: flex;
+    flex-direction: column;
+    width:100%;
+    overflow: auto; 
+
+    position: relative;
+    top: -50px; 
+    min-height: calc(100vh - 60px); /* Ensures space at bottom */
+    padding-bottom: 60px; 
+}
+.dashboard p{
+    color:teal;
+}
+
+.dashboard h3{
+    color: teal;
+    font-weight: bold;
+}
+
+html, body {
+    height: 100vh;  /* Full viewport height */
+    overflow: hidden; /* Disable scrolling */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
 }
 button {
-    background-color: white;
-    color: teal;
-    padding: 10px;
-    margin: 5px;
+    
+    margin: 10px;
+    padding: 10px 15px;
+    background-color: #00796B;
+    color: white;
     border: none;
     cursor: pointer;
+    border-radius: 5px;
+    /*transition: background 0.3s ease-in-out;*/
+    font-weight: bold;
 }
 .modal {
     position: fixed;
@@ -19,7 +50,69 @@ button {
     display: flex; justify-content: center; align-items: center;
 }
 .modal-content {
-    background: white;
+    background:white;
     padding: 20px;
     text-align: left;
+}
+
+
+
+button:hover {
+    background-color: #00695c; /* Darker teal */
+}
+
+/* Job Listings Container */
+.job-listings {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto; /* Enables horizontal scrolling */
+    padding: 10px;
+    white-space: nowrap;
+    scroll-behavior: smooth; /* Smooth scrolling */
+    
+}
+.job-card {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 270px; /* Fixed width for consistency */
+    min-width: 270px; /* Ensures cards stay in a row */
+    text-align: left;
+    border-left: 5px solid #00897b; /* Teal accent */
+    transition: transform 0.2s ease-in-out;
+    white-space: normal; /* Ensures text wraps */
+}
+
+.job-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Job Title */
+.job-card h4 {
+    margin-bottom: 10px;
+    color: #004d40; /* Dark teal */
+}
+
+/* Job Details */
+.job-card p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #546e7a; /* Muted teal-gray */
+}
+
+/* Job Description Link */
+.job-card a {
+    display: inline-block;
+    margin-top: 10px;
+    color: #00796b; /* Teal */
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease-in-out;
+}
+
+.job-card a:hover {
+    text-decoration: underline;
+    color: #004d40; /* Darker teal */
 }

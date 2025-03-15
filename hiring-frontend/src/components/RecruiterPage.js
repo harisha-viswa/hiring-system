@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import '../styles/Recruiter.css';
+
 
 const RecruiterPage = () => {
     const navigate = useNavigate();
@@ -14,7 +16,6 @@ const RecruiterPage = () => {
         job_description: null
     });
 
-    // Fetch jobs from backend
     useEffect(() => {
         axios.get("http://127.0.0.1:5000/get-jobs")
             .then(response => setJobList(response.data))
@@ -56,7 +57,6 @@ const RecruiterPage = () => {
             });
             alert("Job Created Successfully!");
 
-            // Refresh job list
             const response = await axios.get("http://127.0.0.1:5000/get-jobs");
             setJobList(response.data);
 
@@ -92,18 +92,21 @@ const RecruiterPage = () => {
             )}
 
             <h3>Job Listings</h3>
-            <ul>
+            <div className="job-listings">
                 {jobList.map((job) => (
-                    <li key={job.job_id}>
-                        <strong>{job.job_role}</strong> | {job.location} | {job.salary} | {job.experience} years experience
-                        <br />
-                        <a href={`http://127.0.0.1:5000/job-description/${job.job_id}`} target="_blank" rel="noopener noreferrer">View Job Description</a>
-                    </li>
+                    <div key={job.job_id} className="job-card">
+                        <h4>{job.job_role}</h4>
+                        <p><strong>Location:</strong> {job.location}</p>
+                        <p><strong>Salary:</strong> {job.salary}</p>
+                        <p><strong>Experience:</strong> {job.experience} years</p>
+                        <a href={`http://127.0.0.1:5000/job-description/${job.job_id}`} target="_blank" rel="noopener noreferrer">
+                            View Job Description
+                        </a>
+                    </div>
                 ))}
-            </ul>
+            </div>
         </div>
     );
 };
 
 export default RecruiterPage;
-
