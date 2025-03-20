@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/CandidatePage.css";
 import { useNavigate } from 'react-router-dom';
-
+import { MessageCircle } from 'lucide-react';
 
 const CandidatePage = () => {
     const navigate = useNavigate();
     const [jobList, setJobList] = useState([]);
+    const [appliedJobs, setAppliedJobs] = useState(new Set());
     const [showForm, setShowForm] = useState(false);
     const [selectedJobId, setSelectedJobId] = useState(null);
     const [formData, setFormData] = useState({
@@ -17,12 +18,27 @@ const CandidatePage = () => {
     });
 
     useEffect(() => {
+        // Fetch job listings
         axios.get("http://127.0.0.1:5000/get-jobs")
             .then(response => setJobList(response.data))
             .catch(error => console.error("Error fetching jobs:", error));
+
+        // Fetch applied jobs for the logged-in candidate
+        axios.get("http://127.0.0.1:5000/get-applied-jobs", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        })
+        .then(response => {
+            setAppliedJobs(new Set(response.data.applied_jobs));
+        })
+        .catch(error => console.error("Error fetching applied jobs:", error));
+
     }, []);
 
     const handleApply = (jobId) => {
+        if (appliedJobs.has(jobId)) {
+            alert("You have already applied for this job!");
+            return;
+        }
         setSelectedJobId(jobId);
         setShowForm(true);
     };
@@ -49,18 +65,20 @@ const CandidatePage = () => {
                 headers: { "Content-Type": "multipart/form-data" }
             });
             alert("Application submitted successfully!");
+
+            // Update applied jobs state
+            setAppliedJobs((prev) => new Set([...prev, selectedJobId]));
+
             setShowForm(false);
         } catch (error) {
             alert("Error submitting application: " + (error.response?.data?.error || error.message));
         }
-
-       
     };
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user_type');
         navigate('/');
-
     };
 
     return (
@@ -76,7 +94,11 @@ const CandidatePage = () => {
                         <p><strong>Salary:</strong> {job.salary}</p>
                         <p><strong>Experience:</strong> {job.experience} years</p>
                         <a href={`http://127.0.0.1:5000/job-description/${job.job_id}`} target="_blank" rel="noopener noreferrer">View Description</a>
-                        <button onClick={() => handleApply(job.job_id)}>Apply</button>
+                        {appliedJobs.has(job.job_id) ? (
+                            <button className="applied-btn" disabled>Applied</button>
+                        ) : (
+                            <button onClick={() => handleApply(job.job_id)}>Apply</button>
+                        )}
                     </div>
                 ))}
             </div>
@@ -98,6 +120,10 @@ const CandidatePage = () => {
             )}
 
             <button className="logout-btn" onClick={handleLogout}>Logout</button>
+
+            <button className="chatbot-icon" title="Chat with us!">
+                <MessageCircle size={24} color="white" />
+            </button>
         </div>
     );
 };

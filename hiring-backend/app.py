@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt  # type: ignore
-from flask_jwt_extended import create_access_token, jwt_required, JWTManager
+from flask_jwt_extended import create_access_token,get_jwt_identity, jwt_required, JWTManager
 import pymysql
 import os
 import random
@@ -74,29 +74,37 @@ def register():
 def login():
     data = request.get_json(force=True, silent=True)
     if not data:
+        print("❌ Invalid JSON format received")
         return jsonify({"error": "Invalid JSON format"}), 400
 
     email = data.get('email')
     password = data.get('password')
-
+    print(f"🔍 Login attempt for email: {email}")
     if not email or not password:
+        print("❌ Missing email or password")
         return jsonify({"error": "Email and password are required"}), 400
 
     conn = get_db_connection()
     if conn is None:
+        print("❌ Database connection failed")
         return jsonify({"error": "Database connection failed"}), 500
 
     try:
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
-
+        if user:
+            print(f"✅ User found: {user['email']} (Type: {user['user_type']})")
+            print(f"🔒 Stored Hash: {user['password']}")
+            print(f"🔑 Entered Password: {password}")
         if user and bcrypt.check_password_hash(user['password'], password):
             access_token = create_access_token(identity={"email": user['email'], "user_type": user['user_type']})
+            print("✅ Password matched, login successful")
             return jsonify({"token": access_token, "user_type": user['user_type']}), 200
-
+        print("❌ Invalid credentials")
         return jsonify({"error": "Invalid credentials"}), 401
     except Exception as e:
+        print(f"❌ Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
     finally:
         conn.close()
@@ -173,7 +181,6 @@ def apply_job():
     conn.close()
 
     return jsonify({"message": "Application submitted successfully"}), 201
-
 
 
 
