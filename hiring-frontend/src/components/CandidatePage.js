@@ -12,7 +12,7 @@ const CandidatePage = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        phone: '',
+        phone_no: '',
         resume: null
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
