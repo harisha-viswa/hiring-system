@@ -1,0 +1,15 @@
+
+1. Create a Virtual Environment
+
+python -m venv venv
+
+2. Activate the Virtual Environment
+
+venv\Scripts\activate
+
+3. Install Dependencies from requirements.txt
+
+pip install -r requirements.txt
+
+#To save the current python package
+pip freeze > requirements.txt
