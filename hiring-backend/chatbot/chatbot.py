@@ -104,7 +104,7 @@ FAQ Answer: {retrieved_answer.strip()}
         return f"Error generating response: {e}" 
     
 # Load and process FAQs
-pdf_path = r"C:/Users/Haarini G/Downloads/Job_Application_FAQ.pdf"  # Provide your PDF path
+pdf_path = r"D:/hiring_system/hiring-backend/chatbot/Job_Application_FAQ.pdf"  # Provide your PDF path
 text = extract_text_from_pdf(pdf_path)
 faq_pairs = process_faqs(text)
 
