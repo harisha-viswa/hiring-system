@@ -162,3 +162,169 @@ button:hover {
     text-decoration: underline;
     color: #004d40; /* Darker teal */
 }
+
+/* Wrapper to center the applicant section */
+.applicant-list {
+    position: relative;
+    background-color: #ffffff;
+    border: 2px solid #009688;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 150, 136, 0.2);
+    padding: 24px;
+    width: 80%;
+    max-width: 800px;
+    margin: 40px auto; /* This centers it horizontally */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+ 
+  /* Header text */
+  .applicant-list h3 {
+    margin-bottom: 20px;
+    font-size: 1.6rem;
+    color: #00695c;
+    text-align: center;
+  }
+  
+
+  .applicant-list table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Table Head Styling */
+  .applicant-list thead {
+    background-color: #b2dfdb;
+  }
+  
+  .applicant-list th,
+  .applicant-list td {
+    padding: 12px ;
+    text-align: left;
+    border-bottom: 1px solid #ccc;
+  }
+
+
+  /* Table Head Text */
+  .applicant-list th {
+    font-weight: bold;
+    color: #004d40;
+  }
+  
+  /* Hover Effect */
+  .applicant-list tbody tr:hover {
+    background-color: #f1fdfa;
+  }
+  
+  /* Message when no applicants are found */
+  .applicant-list p {
+    text-align: center;
+    font-size: 1rem;
+    color: #757575;
+  }
+
+  /* Button styling */
+.applicant-list button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .applicant-list button:hover {
+    opacity: 0.9;
+  }
+  
+  .applicant-list .selected-btn {
+    background-color: #4caf50;
+    color: white;
+    margin-right: 8px;
+  }
+  
+  .applicant-list .not-selected-btn {
+    background-color: #f44336;
+    color: white;
+  }
+
+  /* Flex row for buttons */
+.button-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  
+  /* Optional: Responsive table */
+  @media screen and (max-width: 768px) {
+    .applicant-list table,
+    .applicant-list thead,
+    .applicant-list tbody,
+    .applicant-list th,
+    .applicant-list td,
+    .applicant-list tr {
+      display: block;
+    }
+
+    .applicant-list tr {
+        margin-bottom: 15px;
+      }
+    
+      .applicant-list td {
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+      }
+    
+      .applicant-list td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 15px;
+        top: 12px;
+        font-weight: bold;
+        text-align: left;
+      }
+    }
+  .recruiter-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .overlay {
+    position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(1px); 
+  background-color: rgba(0, 0, 0, 0.3); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  }    
+  .close-button {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background-color: #f2f2f2;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    line-height: 28px;
+    text-align: center;
+    cursor: pointer;
+    color: #333;
+    font-weight: bold;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    justify-content: center;
+  }
+  
+  .close-button:hover {
+    background-color: teal;
+  }
+  

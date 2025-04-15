@@ -15,7 +15,8 @@ const RecruiterPage = () => {
         location: '',
         job_description: null
     });
-
+    const [applicants, setApplicants] = useState([]);
+    const [selectedJobId, setSelectedJobId] = useState(null);
     useEffect(() => {
         axios.get("http://127.0.0.1:5000/get-jobs")
             .then(response => setJobList(response.data))
@@ -40,6 +41,29 @@ const RecruiterPage = () => {
         }
         setFormData({ ...formData, job_description: file });
     };
+    const handleViewApplicants = async (job_id) => {
+        try {
+            const response = await axios.post("http://127.0.0.1:5000/get-applicants", {
+                job_id: job_id
+            });
+            console.log("Applicants fetched:", response.data);
+            setApplicants(response.data);
+            setSelectedJobId(job_id);
+        } catch (error) {
+            console.error("Full error object:", error);
+            alert("Error fetching applicants: " + (error.response?.data?.error || error.message || "Unknown error"));
+        }
+    };
+    const handleSelect = (applicantId) => {
+        console.log(`Applicant ${applicantId} selected`);
+        // You can also make a POST/PUT request to your backend here to update status
+      };
+      
+      const handleNotSelect = (applicantId) => {
+        console.log(`Applicant ${applicantId} not selected`);
+        // Same idea, send update to backend
+      };
+      
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -105,10 +129,79 @@ const RecruiterPage = () => {
                         <a href={`http://127.0.0.1:5000/job-description/${job.job_id}`} target="_blank" rel="noopener noreferrer">
                             View Job Description
                         </a>
+                        <button onClick={() => handleViewApplicants(job.job_id)}>View Applicants</button>
                     </div>
                 ))}
+
             </div>
-           
+            <div className="recruiter-page">
+            {selectedJobId && (
+        <div className="overlay">
+        <div className="applicant-list">
+        <button className="close-button" onClick={() => setSelectedJobId(null)}>X</button>
+        <h3>Applicants for Job ID: {selectedJobId}</h3>
+        {applicants.length > 0 ? (
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>phone_no</th>
+                        <th>Resume</th>
+                        <th>Final Score</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {applicants.map((applicant, index) => {
+                    console.log("Resume path:", applicant.resume); // ✅ Log resume path here
+
+                    return (
+                    <tr key={index}>
+                        <td>{applicant.name}</td>
+                        <td>{applicant.email}</td>
+                        <td>{applicant.phone_no}</td>
+                        <td>
+                            <a
+                                href={`http://localhost:5000/download-resume/${applicant.resume.replace(/^.*[\\/]/, '')}`}
+                                download
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Download Resume
+                            </a>
+                        </td>
+                        <td>{applicant.final_score}</td>
+                        <td>
+                            <div className='button-group'>
+                            <button
+                            onClick={() => handleSelect(applicant.id)}
+                            className="selected-btn"
+                            >
+                            Selected
+                            </button>
+                            <button
+                            onClick={() => handleNotSelect(applicant.id)}
+                            className="not-selected-btn"
+                            >
+                            Not Selected
+                            </button>
+                            </div>
+                        </td>
+                    </tr>
+                    );
+                })}
+                </tbody>
+
+            </table>
+        ) : (
+            <p>No applicants found for this job.</p>
+        )}
+        
+        </div>
+    </div>
+        )}
+     </div>
         </>
     );
 };

@@ -8,17 +8,20 @@ import pdfplumber
 import argparse
 from sentence_transformers import SentenceTransformer, util
 import os
+import pandas as pd
+import math
 class ResumeMatcher:
     def __init__(self):
         self.nlp = spacy.load("en_core_web_sm")
         self.model = SentenceTransformer("all-mpnet-base-v2")
         self.skills_database = set([
-            "python", "java", "javascript", "c++", "c#", "sql", "firebase", "mongodb",
-            "react", "reactjs", "angular", "node.js", "machine learning", "deep learning",
-            "artificial intelligence", "data science", "nlp", "pandas", "numpy", "tensorflow",
-            "pytorch", "django", "flask", "spring boot", "aws", "azure", "docker", "kubernetes",
-            "git", "github", "html", "css", "bootstrap", "tailwind", "typescript"
-        ])
+    # --- Technical Skills ---
+    "python", "java", "javascript", "c++", "c#", "sql", "firebase", "mongodb",
+    "react", "reactjs", "angular", "node.js", "machine learning", "deep learning",
+    "artificial intelligence", "data science", "nlp", "pandas", "numpy", "tensorflow",
+    "pytorch", "django", "flask", "spring boot", "aws", "azure", "docker", "kubernetes",
+    "git", "github", "html", "css", "bootstrap", "tailwind", "typescript"
+])
     
     def preprocess_text(self, text):
         text = text.lower().strip()
@@ -97,19 +100,25 @@ class ResumeMatcher:
         match_score = (len(matched_skills) / len(job_skills)) * 100
         return match_score, matched_skills
     
+    def sigmoid_normalize(self, score):
+ 
+        scaled = score / 100  # Convert percentage to 0–1
+        return 1 / (1 + math.exp(-12 * (scaled - 0.5)))  # Adjust 12 for sharpness
+
+    
     def match_resume_to_job(self, job_desc, resume_text):
         job_skills = self.extract_skills(job_desc)
         resume_skills = self.extract_skills(resume_text)
 
         skill_match, matched_skills = self.compare_skills(job_skills, resume_skills)
         content_similarity = self.calculate_similarity(job_desc, resume_text)
-
+        skill_match_normalized = self.sigmoid_normalize(skill_match) * 100
         if skill_match == 100:
-            final_score = (0.4 * content_similarity) + (0.6 * skill_match)
+            final_score = (0.4 * content_similarity) + (0.6 * skill_match_normalized)
         elif skill_match >= 90:
-            final_score = (0.5 * content_similarity) + (0.5 * skill_match)
+            final_score = (0.5 * content_similarity) + (0.5 * skill_match_normalized)
         else:
-            final_score = (0.6 * content_similarity) + (0.4 * skill_match)
+            final_score = (0.6 * content_similarity) + (0.4 * skill_match_normalized)
 
         final_score = min(final_score, 100)
 

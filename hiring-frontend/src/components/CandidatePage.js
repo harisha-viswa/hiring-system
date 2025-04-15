@@ -16,6 +16,8 @@ const CandidatePage = () => {
         resume: null
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [applyingJobId, setApplyingJobId] = useState(null); 
+
 
     useEffect(() => {
         // Fetch job listings
@@ -41,6 +43,9 @@ const CandidatePage = () => {
     const handleFileChange = (e) => {
         setFormData({ ...formData, resume: e.target.files[0] });
     };
+
+  
+    
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -82,6 +87,7 @@ const CandidatePage = () => {
             return;
         }
     
+        setApplyingJobId(jobId); 
         console.log("Applying for Job ID:", jobId);
         console.log("Candidate ID:", candidateId);
     
@@ -95,10 +101,12 @@ const CandidatePage = () => {
                 alert(response.data.error);
             } else {
                 alert("Application submitted successfully!");
-                setAppliedJobs(new Set([...appliedJobs, jobId])); // Mark job as applied
+                setAppliedJobs(new Set([...appliedJobs, jobId])); 
             }
         } catch (error) {
             alert("Error applying for job: " + (error.response?.data?.error || error.message));
+        } finally {
+            setApplyingJobId(null); 
         }
     };
     
@@ -136,7 +144,11 @@ const CandidatePage = () => {
         localStorage.removeItem('user_type');
         navigate('/');
     };
-
+    const Spinner = () => (
+        <span className="spinner" style={{ marginRight: "8px" }}>
+        <i className="fa fa-spinner fa-spin" aria-hidden="true"></i>
+        </span>
+    );
     return (
         <div className="candidate-container">
             <h2>Candidate Dashboard</h2>
@@ -158,13 +170,18 @@ const CandidatePage = () => {
                             <button className="applied-btn" disabled>Applied</button>
                         ) : (
                             <>
-                            <button onClick={() => handleApply(job.job_id)}>Apply</button>
+                            <button onClick={() => handleApply(job.job_id)} disabled={applyingJobId === job.job_id}>
+                                 {applyingJobId === job.job_id ? <span><Spinner /> Applying...</span> : "Apply"}
+                            </button>
                             
                             </>
                         )}
                         <button onClick={() => handleCancelApplication(job.job_id)}>Revoke</button>
+                        
                     </div>
                 ))}
+                
+
             </div>
 
             {showForm && (
@@ -207,6 +224,7 @@ const CandidatePage = () => {
                     </div>
                 </div>
             )}
+           
 
             <button className="logout-btn" onClick={handleLogout}>Logout</button>
 

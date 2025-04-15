@@ -101,7 +101,44 @@ def register():
         return jsonify({"error": str(e)}), 500
     finally:
         conn.close()
+@app.route('/cancel-application', methods=['POST'])
+def cancel_application():
+    data = request.json
+    job_id = data.get('job_id')
+    candidate_id = data.get('candidate_id')
 
+    if not all([job_id, candidate_id]):
+        return jsonify({"error": "Both job_id and candidate_id are required"}), 400
+
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error": "Database connection failed"}), 500
+
+        with conn.cursor() as cursor:
+            # Check if job_application table exists; create if it doesn't
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS job_application (
+                    job_id INT NOT NULL,
+                    candidate_id VARCHAR(50) NOT NULL,
+                    final_score VARCHAR(50)
+                )
+            """)
+            conn.commit()
+
+            # Delete the application
+            cursor.execute("""
+                DELETE FROM job_application 
+                WHERE job_id = %s AND candidate_id = %s
+            """, (job_id, candidate_id))
+            conn.commit()
+
+        conn.close()
+        return jsonify({"message": "Application cancelled successfully"}), 200
+
+    except Exception as e:
+        traceback.print_exc()  # Optional for debugging
+        return jsonify({"error": str(e)}), 500
 
 # Login User
 @app.route('/login', methods=['POST'])
@@ -209,6 +246,16 @@ def get_job_description(job_id):
         return send_file(job['job_description'], as_attachment=True)
     return jsonify({"error": "File not found"}), 404
 
+@app.route('/download-resume/<filename>', methods=['GET'])
+def download_resume(filename):
+    file_path = os.path.join('uploads', filename)
+    print("Requested filename:", filename)
+    print("Resolved path:", file_path)
+    print("Exists?", os.path.exists(file_path))
+
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True)
+    return jsonify({"error": "Resume not found"}), 404
 
 
 @app.route('/apply-job', methods=['POST'])
@@ -252,41 +299,54 @@ def apply_job():
     except Exception as e:
         return jsonify({"error": str(e)}), 500  # Send the actual error message
 
-@app.route('/cancel-application', methods=['POST'])
-def cancel_application():
-    data = request.json
-    job_id = data.get('job_id')
-    candidate_id = data.get('candidate_id')
+from flask import request, jsonify
+import traceback  # optional, if you want to log errors
 
-    if not all([job_id, candidate_id]):
-        return jsonify({"error": "Both job_id and candidate_id are required"}), 400
-
+@app.route('/get-applicants', methods=['POST'])
+def get_applicants():
+    print("POST /get-applicants called")
     try:
+        data = request.get_json()
+        job_id = data.get('job_id')
+        print("Received job_id:", job_id)
+
+        if not job_id:
+            return jsonify({"error": "job_id is required"}), 400
+
         conn = get_db_connection()
         if conn is None:
             return jsonify({"error": "Database connection failed"}), 500
 
         with conn.cursor() as cursor:
-            # Check if application exists
-            cursor.execute("SELECT * FROM job_application WHERE job_id = %s AND candidate_id = %s", (job_id, candidate_id))
-            application = cursor.fetchone()
+            cursor.execute("""
+                SELECT DISTINCT cd.name, cd.email, cd.phone_no, cd.resume, ja.final_score
+                FROM job_application ja
+                JOIN candidate_details cd ON ja.candidate_id = cd.candidate_id
+                WHERE ja.job_id = %s
+            """, (job_id,))
+            applicants = cursor.fetchall()
 
-            if not application:
-                return jsonify({"error": "Application not found"}), 404
-
-            # Delete the application record
-            cursor.execute("DELETE FROM job_application WHERE job_id = %s AND candidate_id = %s", (job_id, candidate_id))
-            conn.commit()
+            result = [
+                {
+                    "name": row["name"],
+                    "email": row["email"],
+                    "phone_no": row["phone_no"],
+                    "resume": row["resume"],
+                    "final_score": row["final_score"]
+                }
+                for row in applicants
+            ]
 
         conn.close()
-        return jsonify({"message": "Application deleted successfully"}), 200
+        return jsonify(result), 200
 
     except Exception as e:
+        # Optional: print full traceback for debugging
+        print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
 
-    
-    
+
 @app.route('/candidate-info', methods=['POST'])
 def candidate_info():
     
