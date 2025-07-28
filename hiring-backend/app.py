@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, session
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt  # type: ignore
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager
@@ -8,17 +8,16 @@ from werkzeug.utils import secure_filename
 from resume_matcher import ResumeMatcher
 import random
 
-
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
+   
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 bcrypt = Bcrypt(app)
 app.config['JWT_SECRET_KEY'] = 'your_secret_key'
 jwt = JWTManager(app)
-
 # Database Connection Function
 def get_db_connection():
     try:
@@ -51,26 +50,18 @@ def get_db_connection():
         return None
 
 
-# Register User
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json(force=True, silent=True)
     if not data:
         return jsonify({"error": "Invalid JSON format"}), 400
-
     required_fields = ['name', 'email', 'password', 'phone', 'user_type']
-    
-    # Ensure all fields are present
     missing_fields = [field for field in required_fields if field not in data]
     if missing_fields:
         return jsonify({"error": f"Missing fields: {', '.join(missing_fields)}"}), 400
-
     name, email, password, phone, user_type = data['name'], data['email'], data['password'], data['phone'], data['user_type']
-    
     hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-
-    conn = get_db_connection()
-    
+    conn = get_db_connection() 
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
 
@@ -88,12 +79,9 @@ def register():
                 )
             """)
             conn.commit()
-
-            # Insert user data
             cursor.execute("INSERT INTO users (name, email, password, phone, user_type) VALUES (%s, %s, %s, %s, %s)",
                            (name, email, hashed_pw, phone, user_type))
             conn.commit()
-
         return jsonify({"message": "User registered successfully"}), 201
     except pymysql.IntegrityError:
         return jsonify({"error": "Email already exists"}), 400
@@ -101,22 +89,20 @@ def register():
         return jsonify({"error": str(e)}), 500
     finally:
         conn.close()
+        
 @app.route('/cancel-application', methods=['POST'])
 def cancel_application():
     data = request.json
     job_id = data.get('job_id')
     candidate_id = data.get('candidate_id')
-
     if not all([job_id, candidate_id]):
         return jsonify({"error": "Both job_id and candidate_id are required"}), 400
-
     try:
         conn = get_db_connection()
         if conn is None:
             return jsonify({"error": "Database connection failed"}), 500
 
         with conn.cursor() as cursor:
-            # Check if job_application table exists; create if it doesn't
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS job_application (
                     job_id INT NOT NULL,
@@ -125,41 +111,33 @@ def cancel_application():
                 )
             """)
             conn.commit()
-
-            # Delete the application
             cursor.execute("""
                 DELETE FROM job_application 
                 WHERE job_id = %s AND candidate_id = %s
             """, (job_id, candidate_id))
             conn.commit()
-
         conn.close()
         return jsonify({"message": "Application cancelled successfully"}), 200
-
     except Exception as e:
-        traceback.print_exc()  # Optional for debugging
+        traceback.print_exc()  
         return jsonify({"error": str(e)}), 500
 
-# Login User
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json(force=True, silent=True)
     if not data:
         print("Invalid JSON format received")
         return jsonify({"error": "Invalid JSON format"}), 400
-
     email = data.get('email')
     password = data.get('password')
     print(f"🔍 Login attempt for email: {email}")
     if not email or not password:
         print("Missing email or password")
         return jsonify({"error": "Email and password are required"}), 400
-
     conn = get_db_connection()
     if conn is None:
         print("Database connection failed")
         return jsonify({"error": "Database connection failed"}), 500
-
     try:
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
@@ -180,7 +158,6 @@ def login():
     finally:
         conn.close()
 
-
 @app.route('/create-job', methods=['POST'])
 def create_job():
     job_id = random.randint(1000, 9999)
@@ -189,18 +166,12 @@ def create_job():
     salary = request.form['salary']
     location = request.form['location']
     job_description = request.files['job_description']
-
     if job_description and job_description.filename.endswith('.pdf'):
         file_path = os.path.join(UPLOAD_FOLDER, f"{job_id}.pdf")
         job_description.save(file_path)
-            
-
     conn = get_db_connection()
-    
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
-
-
     with conn.cursor() as cursor:
         # Check if the jobs_description table exists, if not create it
         cursor.execute("""
@@ -214,15 +185,10 @@ def create_job():
             )
         """)
         conn.commit()
-
-        # Insert user data
         cursor.execute("INSERT INTO jobs_description (job_id, job_role, experience, salary, location, job_description) VALUES (%s, %s, %s, %s, %s, %s)",
                     (job_id, job_role, experience, salary, location, file_path))
-        conn.commit()    
-    
+        conn.commit()       
     return jsonify({"message": "Job created successfully", "job_id": job_id}), 201
-
-
 
 @app.route('/get-jobs', methods=['GET'])
 def get_jobs():
@@ -240,8 +206,7 @@ def get_job_description(job_id):
     cursor = conn.cursor()
     cursor.execute("SELECT job_description FROM jobs_description WHERE job_id = %s", (job_id,))
     job = cursor.fetchone()
-    conn.close()
-    
+    conn.close() 
     if job and os.path.exists(job['job_description']):
         return send_file(job['job_description'], as_attachment=True)
     return jsonify({"error": "File not found"}), 404
@@ -252,30 +217,21 @@ def download_resume(filename):
     print("Requested filename:", filename)
     print("Resolved path:", file_path)
     print("Exists?", os.path.exists(file_path))
-
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
     return jsonify({"error": "Resume not found"}), 404
-
 
 @app.route('/apply-job', methods=['POST'])
 def apply_job():
     data=request.json 
     job_id = data.get('job_id')
     candidate_id = data.get('candidate_id')
-
     if not all([job_id, candidate_id]):
         return jsonify({"error": "All fields are required"}), 400
-
-
     matcher = ResumeMatcher() 
     result = matcher.match_resume(job_id, candidate_id)
-
-    final_score = result.get('final_score')
-    
-    
+    final_score = result.get('final_score')   
     print(f"Final Score: {final_score}")
-
     try:
         conn = get_db_connection()
         if conn is None:
@@ -298,10 +254,7 @@ def apply_job():
         return jsonify({"message": "Application submitted successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500  # Send the actual error message
-
-from flask import request, jsonify
 import traceback  # optional, if you want to log errors
-
 @app.route('/get-applicants', methods=['POST'])
 def get_applicants():
     print("POST /get-applicants called")
@@ -309,25 +262,21 @@ def get_applicants():
         data = request.get_json()
         job_id = data.get('job_id')
         print("Received job_id:", job_id)
-
         if not job_id:
             return jsonify({"error": "job_id is required"}), 400
-
         conn = get_db_connection()
         if conn is None:
             return jsonify({"error": "Database connection failed"}), 500
-
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT DISTINCT cd.name, cd.email, cd.phone_no, cd.resume, ja.final_score
+                SELECT DISTINCT cd.candidate_id, cd.name, cd.email, cd.phone_no, cd.resume, ja.final_score
                 FROM job_application ja
                 JOIN candidate_details cd ON ja.candidate_id = cd.candidate_id
                 WHERE ja.job_id = %s
             """, (job_id,))
             applicants = cursor.fetchall()
-
             result = [
-                {
+                {   "id": row["candidate_id"],
                     "name": row["name"],
                     "email": row["email"],
                     "phone_no": row["phone_no"],
@@ -336,20 +285,15 @@ def get_applicants():
                 }
                 for row in applicants
             ]
-
         conn.close()
+        print(result)
         return jsonify(result), 200
-
     except Exception as e:
         # Optional: print full traceback for debugging
         print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
-
-
-
 @app.route('/candidate-info', methods=['POST'])
-def candidate_info():
-    
+def candidate_info(): 
     candidate_id = random.randint(1000, 9999)
     name = request.form['name']
     email = request.form['email']
@@ -377,5 +321,8 @@ def candidate_info():
         cursor.execute("INSERT INTO candidate_details (candidate_id, name, email, phone_no, resume) VALUES (%s, %s, %s, %s, %s)",(candidate_id, name, email, phone_no, file_path))
         conn.commit()    
     return jsonify({"message": "Candidate details created successfully", "candidate_id": candidate_id}), 201
+
+    
+
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)
