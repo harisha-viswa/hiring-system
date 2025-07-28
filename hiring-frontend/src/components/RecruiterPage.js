@@ -54,17 +54,36 @@ const RecruiterPage = () => {
             alert("Error fetching applicants: " + (error.response?.data?.error || error.message || "Unknown error"));
         }
     };
-    const handleSelect = (applicantId) => {
+    const handleSelect = async (applicantId) => {
         console.log(`Applicant ${applicantId} selected`);
-        // You can also make a POST/PUT request to your backend here to update status
-      };
-      
-      const handleNotSelect = (applicantId) => {
+        try {
+            // Send request to backend to send email
+            await axios.post('http://127.0.0.1:5000/send-selection-email', {
+                applicant_id: applicantId,  // Send applicant ID
+                selected: true               // Selected status
+            });
+            alert("Email sent to the applicant confirming selection.");
+        } catch (error) {
+            console.error("Error sending selection email:", error);
+            alert("Error sending selection email.");
+        }
+    };
+    
+    const handleNotSelect = async (applicantId) => {
         console.log(`Applicant ${applicantId} not selected`);
-        // Same idea, send update to backend
-      };
-      
-
+        try {
+            // Send request to backend to send email
+            await axios.post('http://127.0.0.1:5000/send-selection-email', {
+                applicant_id: applicantId,  // Send applicant ID
+                selected: false              // Not selected status
+            });
+            alert("Email sent to the applicant notifying non-selection.");
+        } catch (error) {
+            console.error("Error sending non-selection email:", error);
+            alert("Error sending non-selection email.");
+        }
+    };
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -144,12 +163,13 @@ const RecruiterPage = () => {
             <table>
                 <thead>
                     <tr>
+                        <th>ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>phone_no</th>
                         <th>Resume</th>
                         <th>Final Score</th>
-                        <th>Action</th>
+                        <th>Result</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -158,6 +178,7 @@ const RecruiterPage = () => {
 
                     return (
                     <tr key={index}>
+                        <td>{applicant.id}</td>
                         <td>{applicant.name}</td>
                         <td>{applicant.email}</td>
                         <td>{applicant.phone_no}</td>
@@ -174,18 +195,21 @@ const RecruiterPage = () => {
                         <td>{applicant.final_score}</td>
                         <td>
                             <div className='button-group'>
-                            <button
-                            onClick={() => handleSelect(applicant.id)}
-                            className="selected-btn"
-                            >
-                            Selected
-                            </button>
-                            <button
-                            onClick={() => handleNotSelect(applicant.id)}
-                            className="not-selected-btn"
-                            >
-                            Not Selected
-                            </button>
+                                {applicant.final_score > 75 ? (
+                                    <button
+                                        onClick={() => handleSelect(applicant.id)}
+                                        className="selected-btn"
+                                    >
+                                        Selected
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => handleNotSelect(applicant.id)}
+                                        className="not-selected-btn"
+                                    >
+                                        Not Selected
+                                    </button>
+                                )}
                             </div>
                         </td>
                     </tr>

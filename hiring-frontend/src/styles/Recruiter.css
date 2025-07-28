@@ -242,11 +242,14 @@ button:hover {
     background-color: #4caf50;
     color: white;
     margin-right: 8px;
+    justify-content: center;
+    text-align: center;
   }
   
   .applicant-list .not-selected-btn {
     background-color: #f44336;
     color: white;
+    text-align: center;
   }
 
   /* Flex row for buttons */
